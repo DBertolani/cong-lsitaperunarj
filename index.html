@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <? var cfg = JSON.parse(config); ?>
+
+  <title>
+    <?= cfg.nome_congregacao || 'Programação' ?>
+  </title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ============================= -->
+  <!-- OPEN GRAPH (WhatsApp Preview) -->
+  <!-- ============================= -->
+
+  <meta property="og:title" content="<?= (cfg.nome_congregacao || 'Programação') + ' - Programação Semanal' ?>">
+
+  <meta property="og:description" content="Veja a programação semanal atualizada da congregação.">
+
+  <meta property="og:type" content="website">
+
+  <meta property="og:url" content="<?= ScriptApp.getService().getUrl() ?>">
+
+  <meta property="og:image" content="<?= cfg.imagem_preview ?>">
+
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <!-- melhora compatibilidade -->
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ============================= -->
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ════════════════════════════════════════
+   VARIÁVEIS & BASE
+════════════════════════════════════════ */
+    :root {
+      --cor1: #1a3a5c;
+      --cor2: #2e6da4;
+      --bg: #f0f4f8;
+      --card: #fff;
+      --r: 13px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    ::-webkit-scrollbar {
+      width: 0;
+      background: transparent;
+    }
+
+    /* ════════════════════════════════════════
+   HEADER
+════════════════════════════════════════ */
+    .app-header {
+      background: linear-gradient(135deg, var(--cor1) 0%, var(--cor2) 100%);
+      color: #fff;
+      padding: 10px 12px 0;
+      position: sticky;
+      top: 0;
+      z-index: 300;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, .22);
+    }
+
+    .hdr-top {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .app-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .app-sub {
+      font-size: .73rem;
+      opacity: .72;
+      margin: 0;
+    }
+
+    .hdr-icon {
+      display: none;
+    }
+
+    /* ════════════════════════════════════════
+   TABS PRINCIPAIS
+════════════════════════════════════════ */
+    .nav-tabs-wrap {
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .nav-tabs-wrap::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-tabs-custom {
+      display: flex;
+      gap: 2px;
+      flex-wrap: nowrap;
+      border-bottom: none;
+    }
+
+    .nav-tabs-custom .nav-link {
+      color: rgba(255, 255, 255, .6);
+      border: none;
+      border-radius: 8px 8px 0 0;
+      padding: 8px 14px;
+      font-size: .84rem;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
+      cursor: pointer;
+    }
+
+    .nav-tabs-custom .nav-link:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, .12);
+    }
+
+    .nav-tabs-custom .nav-link.active {
+      background: var(--bg);
+      color: var(--cor1);
+    }
+
+    .cnt {
+      background: rgba(255, 255, 255, .22);
+      color: #fff;
+      font-size: .66rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 999px;
+      margin-left: 3px;
+    }
+
+    .nav-link.active .cnt {
+      background: var(--cor2);
+      color: #fff;
+    }
+
+    /* ════════════════════════════════════════
+   BARRA ABAIXO DO HEADER
+   FIX: overflow removido para seta direita aparecer
+════════════════════════════════════════ */
+    .below-header {
+      background: var(--bg);
+      border-bottom: 1px solid #dde4ec;
+      /* FIX: padding reduzido para margens menores */
+      padding: 7px 8px 5px;
+      display: none;
+    }
+
+    .below-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      width: 100%;
+      flex-wrap: nowrap;
+      /* FIX: overflow: hidden REMOVIDO — estava escondendo a seta direita */
+    }
+
+    .sub-tabs {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .week-nav-inline {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    /* Sub-tabs */
+    .sub-btn {
+      background: #dde6f0;
+      border: none;
+      color: var(--cor1);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+
+    .sub-btn.active {
+      background: var(--cor2);
+      color: #fff;
+    }
+
+    /* Nav semanal */
+    .wbtn {
+      background: #dde6f0;
+      border: none;
+      color: var(--cor1);
+      border-radius: 8px;
+      /* FIX: padding reduzido para caber melhor em telas pequenas */
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+
+    .wbtn:hover {
+      background: #c8d8ec;
+    }
+
+    .week-lbl {
+      text-align: center;
+      font-size: .78rem;
+      font-weight: 600;
+      color: #1e293b;
+      line-height: 1.3;
+      padding: 0 2px;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .week-sub {
+      font-size: .65rem;
+      color: #64748b;
+      display: block;
+    }
+
+    .btn-hoje {
+      font-size: .74rem;
+      font-weight: 700;
+      background: var(--cor2);
+      border: none;
+      color: #fff;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn-hoje:hover {
+      background: var(--cor1);
+    }
+
+
+    /* HEADER FIXO */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    /* barra abaixo do header */
+    .below-header {
+      position: sticky;
+      top: 88px;
+      /* ajuste fino depois */
+      z-index: 999;
+    }
+
+    main {
+      padding-top: 8px;
+    }
+
+    /* ════════════════════════════════════════
+   BARRA MWB
+════════════════════════════════════════ */
+    .vem-nav-bar {
+      background: var(--bg);
+      border-bottom: 1px solid #dde4ec;
+      /* FIX: padding reduzido */
+      padding: 7px 8px 5px;
+      display: none;
+    }
+
+    .vem-nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      width: 100%;
+    }
+
+    /* ════════════════════════════════════════
+   FILTROS ORADORES
+════════════════════════════════════════ */
+    /* FIX: padding reduzido */
+    .or-filters {
+      background: var(--bg);
+      padding: 8px 8px 4px;
+      display: none;
+    }
+
+    .or-inner {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .ptoggle {
+      display: flex;
+      background: #dde6f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .fbtn {
+      border: none;
+      color: var(--cor1);
+      padding: 6px 12px;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      transition: all .15s;
+    }
+
+    .ptoggle .fbtn {
+      border-right: 1px solid rgba(0, 0, 0, .07);
+    }
+
+    .ptoggle .fbtn:last-child {
+      border-right: none;
+    }
+
+    .fbtn.active {
+      background: var(--cor2);
+      color: #fff;
+    }
+
+    /* ════════════════════════════════════════
+   BUSCA
+════════════════════════════════════════ */
+    /* FIX: padding lateral reduzido */
+    .search-wrap {
+      padding: 10px 8px;
+      background: var(--bg);
+    }
+
+    .search-input {
+      border-radius: 11px;
+      border: 1.5px solid #d0dce8;
+      padding: 10px 14px 10px 42px;
+      font-size: .9rem;
+      width: 100%;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 13px center;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--cor2);
+      box-shadow: 0 0 0 3px rgba(46, 109, 164, .14);
+    }
+
+    /* ════════════════════════════════════════
+   LAYOUT — grid responsivo
+════════════════════════════════════════ */
+    /* FIX: padding lateral reduzido para aproveitar mais a largura */
+    .cards-container {
+      padding: 4px 8px 32px;
+      width: 100%;
+    }
+
+    .day-section {
+      margin-bottom: 4px;
+      width: 100%;
+    }
+
+    .day-hdr {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: #64748b;
+      padding: 14px 2px 6px;
+    }
+
+    .day-hdr::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #dde4ec;
+    }
+
+    .day-hdr.hoje-hdr {
+      color: #b45309;
+    }
+
+    .day-hdr.hoje-hdr::after {
+      background: #fde68a;
+    }
+
+    /* Grid responsivo (mantido conforme Danilo já havia corrigido) */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      width: 100%;
+    }
+
+    /* ════════════════════════════════════════
+   CARD — Campo e Oradores
+════════════════════════════════════════ */
+    .card-item {
+      background: var(--card);
+      border-radius: var(--r);
+      box-shadow: 0 1px 8px rgba(0, 0, 0, .07);
+      border: 1.5px solid transparent;
+      overflow: hidden;
+      transition: transform .12s;
+      width: 100%;
+    }
+
+    .card-item:active {
+      transform: scale(.983);
+    }
+
+    .card-hoje {
+      border-color: #f59e0b;
+      box-shadow: 0 3px 16px rgba(245, 158, 11, .18);
+    }
+
+    .card-passado {
+      opacity: .48;
+    }
+
+    .card-inner {
+      display: flex;
+      min-height: 88px;
+    }
+
+    .sbar {
+      width: 5px;
+      flex-shrink: 0;
+    }
+
+    .sbar.azul {
+      background: var(--cor2);
+    }
+
+    .sbar.roxo {
+      background: #7c3aed;
+    }
+
+    .sbar.laranja {
+      background: #f97316;
+    }
+
+    .sbar.cinza {
+      background: #94a3b8;
+    }
+
+    .card-hoje .sbar {
+      background: #f59e0b !important;
+    }
+
+    .card-passado .sbar {
+      background: #94a3b8 !important;
+    }
+
+    .cbody {
+      padding: 11px 13px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .crow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+    }
+
+    .badge-tipo {
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .bt-campo {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .bt-vem {
+      background: #ede9fe;
+      color: #5b21b6;
+    }
+
+    .bt-vai {
+      background: #fce7f3;
+      color: #9d174d;
+    }
+
+    .bhoje {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid #fde68a;
+      white-space: nowrap;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .82rem;
+      color: #374151;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 4px 9px;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .chip i {
+      color: var(--cor2);
+      font-size: .74rem;
+      flex-shrink: 0;
+    }
+
+    .chip span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chip-titulo {
+      font-size: .8rem;
+      color: #4b5563;
+      font-style: italic;
+      margin-top: 4px;
+      padding: 3px 9px;
+      background: #f8fafc;
+      border-left: 3px solid #c7d2fe;
+      border-radius: 0 5px 5px 0;
+    }
+
+    .card-obs {
+      margin-top: 7px;
+      font-size: .79rem;
+      color: #6b7280;
+      background: #f8fafc;
+      border-left: 3px solid #d0dce8;
+      padding: 4px 9px;
+      border-radius: 0 5px 5px 0;
+      line-height: 1.4;
+    }
+
+    /* ════════════════════════════════════════
+   CARD MWB
+════════════════════════════════════════ */
+    .vem-card {
+      background: var(--card);
+      border-radius: var(--r);
+      box-shadow: 0 1px 8px rgba(0, 0, 0, .07);
+      overflow: hidden;
+      margin-bottom: 12px;
+      border: 1.5px solid transparent;
+    }
+
+    .vem-card.card-hoje {
+      border-color: #f59e0b;
+      box-shadow: 0 3px 16px rgba(245, 158, 11, .18);
+    }
+
+    .vem-card.card-passado {
+      opacity: .48;
+    }
+
+    .vem-header {
+      background: linear-gradient(90deg, #065f46, #059669);
+      color: #fff;
+      padding: 11px 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .vem-date {
+      font-size: .92rem;
+      font-weight: 700;
+    }
+
+    .vem-hora {
+      font-size: .77rem;
+      opacity: .82;
+      margin-top: 2px;
+    }
+
+    /* ════════════════════════════════════════
+   TÉCNICO (Vídeo / Câmera / Indicadores)
+   FIX: layout em colunas separadas
+════════════════════════════════════════ */
+    .vem-tech {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      column-gap: 12px;
+      row-gap: 6px;
+
+      padding: 8px 14px 10px;
+      background: #f0fdf4;
+      border-bottom: 1px solid #bbf7d0;
+    }
+
+    /* Vídeo (linha 1 esquerda) */
+    .vem-tech-row.video-row {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    /* Câmera (linha 2 esquerda) */
+    .vem-tech-row.camera-row {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    /* Indicadores ocupa lado direito inteiro */
+    .vem-tech-row.indicadores-row {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    /* indicadores empilhados */
+    .vem-indicadores-chips {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+
+    .vem-tech-row {
+      display: contents;
+    }
+
+
+    .vem-tech-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .78rem;
+      color: #065f46;
+      background: #dcfce7;
+      border: 1px solid #a7f3d0;
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-weight: 500;
+    }
+
+    .vem-tech-chip i {
+      color: #059669;
+      font-size: .7rem;
+    }
+
+    .vem-tech-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: #64748b;
+      white-space: nowrap;
+      padding-top: 3px;
+      flex-shrink: 0;
+    }
+
+    .vem-oracao-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      background: #fffbeb;
+      border-bottom: 1px solid #fde68a;
+      font-size: .82rem;
+    }
+
+    .vem-oracao-label {
+      color: #92400e;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .vem-oracao-nome {
+      color: #78350f;
+      font-weight: 500;
+    }
+
+    .vem-body {
+      padding: 8px 14px 12px;
+    }
+
+    .vem-section {
+      margin-bottom: 11px;
+    }
+
+    .vem-section:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ════════════════════════════════════════
+   PRESIDENTE — título e nome na mesma linha
+   FIX: justify-content space-between no sec-title
+════════════════════════════════════════ */
+    .vem-sec-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .71rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: #64748b;
+      margin-bottom: 5px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    /* Presidente tem nome inline — usa space-between */
+    .vem-sec-title.presidente-title {
+      justify-content: space-between;
+      margin-bottom: 0;
+      padding-bottom: 6px;
+    }
+
+    .vem-sec-title.presidente-title .pres-nome {
+      font-size: .84rem;
+      font-weight: 600;
+      color: var(--cor2);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .vem-section-tesouros .vem-sec-title {
+      color: #2a6b6e;
+      border-bottom-color: #d0eaea;
+    }
+
+    .vem-section-ministerio .vem-sec-title {
+      color: #c8960a;
+      border-bottom-color: #fef3c7;
+    }
+
+    .vem-section-crista .vem-sec-title {
+      color: #8c1b22;
+      border-bottom-color: #f5d0d2;
+    }
+
+    .vem-itens {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .vem-item {
+      display: flex;
+      align-items: center;
+      font-size: .84rem;
+      line-height: 1.5;
+      padding: 5px 9px;
+      border-radius: 7px;
+      background: #f8fafc;
+      gap: 6px;
+    }
+
+    .vem-item-num {
+      font-size: .7rem;
+      color: #94a3b8;
+      font-weight: 700;
+      flex-shrink: 0;
+      min-width: 18px;
+    }
+
+    .vem-item-parte {
+      flex: 1;
+      font-weight: 500;
+      color: #1e293b;
+    }
+
+    .vem-item-dur {
+      font-size: .71rem;
+      color: #94a3b8;
+      white-space: nowrap;
+      background: #e2e8f0;
+      border-radius: 4px;
+      padding: 1px 5px;
+      flex-shrink: 0;
+    }
+
+    .vem-item-resp {
+      font-size: .8rem;
+      color: var(--cor2);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .vem-item-estud {
+      font-size: .8rem;
+      color: #059669;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .vem-item-sep {
+      font-size: .74rem;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    .vem-item-ajud {
+      font-size: .78rem;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    /* FIX: "vazio" mantido no CSS mas só usado onde necessário */
+    .vem-item-vazio {
+      font-size: .77rem;
+      color: #cbd5e0;
+      font-style: italic;
+    }
+
+    /* ════════════════════════════════════════
+   TPL
+════════════════════════════════════════ */
+    .tpl-wrap {
+      background: #fff;
+      border-radius: var(--r);
+      box-shadow: 0 1px 8px rgba(0, 0, 0, .07);
+      overflow: hidden;
+      overflow-x: auto;
+    }
+
+    .tpl-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .84rem;
+      min-width: 400px;
+    }
+
+    .tpl-table th {
+      background: var(--cor1);
+      color: #fff;
+      padding: 9px 11px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .tpl-table td {
+      padding: 9px 11px;
+      border-bottom: 1px solid #e8edf3;
+      vertical-align: top;
+    }
+
+    .tpl-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tpl-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .tpl-dia {
+      font-weight: 700;
+      color: var(--cor1);
+    }
+
+    .tpl-local {
+      font-size: .77rem;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+
+    .tpl-nomes {
+      color: #374151;
+      line-height: 1.6;
+      white-space: pre-line;
+      font-size: .82rem;
+    }
+
+    /* ════════════════════════════════════════
+   RESPONSIVO MOBILE
+════════════════════════════════════════ */
+    @media (max-width: 600px) {
+
+      /* FIX: setas menores para não cortar no celular */
+      .wbtn {
+        padding: 5px 9px;
+        font-size: 1rem;
+      }
+
+      .btn-hoje {
+        font-size: .68rem;
+        padding: 5px 7px;
+      }
+
+      .week-lbl {
+        font-size: .72rem;
+      }
+
+      .sub-btn {
+        padding: 5px 8px;
+        font-size: .78rem;
+      }
+    }
+
+    /* ════════════════════════════════════════
+   ESTADOS
+════════════════════════════════════════ */
+    .aviso-mes {
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: var(--r);
+      padding: 16px 18px;
+      text-align: center;
+      color: #92400e;
+      font-size: .9rem;
+      margin-bottom: 12px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #94a3b8;
+    }
+
+    .empty-state i {
+      font-size: 2.2rem;
+      display: block;
+      margin-bottom: 10px;
+      color: #cbd5e0;
+    }
+
+    .empty-state p {
+      font-size: .92rem;
+      margin: 0;
+    }
+
+    .empty-state small {
+      font-size: .78rem;
+      display: block;
+      margin-top: 4px;
+    }
+
+    /* ════════════════════════════════════════
+   FOOTER
+════════════════════════════════════════ */
+    .app-footer {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ════════ HEADER ════════ -->
+  <header class="app-header">
+    <div>
+      <div class="hdr-top">
+        <p class="app-title" id="nomeCongreq">Carregando…</p>
+        <p class="app-sub" id="appSub"></p>
+      </div>
+      <div class="nav-tabs-wrap">
+        <ul class="nav nav-tabs-custom" id="mainTabs"></ul>
+      </div>
+    </div>
+  </header>
+
+  <!-- Barra Campo/TPL + nav semanal -->
+  <div class="below-header" id="belowCampo">
+    <div class="below-header-row">
+      <div class="sub-tabs">
+        <button id="subBtnCampo" class="sub-btn active" onclick="trocarSubAba('campo',this)">
+          <i class="fa-solid fa-map-location-dot me-1"></i>Campo
+        </button>
+        <button id="subBtnTPL" class="sub-btn" onclick="trocarSubAba('tpl',this)">
+          <i class="fa-solid fa-person-walking me-1"></i>TPL
+        </button>
+      </div>
+      <div class="week-nav-inline" id="weekNavCampo">
+        <button class="wbtn" onclick="mudarSemana(-1)">&#8249;</button>
+        <div class="week-lbl">
+          <span id="lblSemana">—</span>
+          <span class="week-sub" id="lblSemanaExtra"></span>
+        </div>
+        <button class="wbtn" onclick="mudarSemana(1)">&#8250;</button>
+        <button class="btn-hoje" onclick="irParaHoje()">Hoje</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra MWB -->
+  <div class="vem-nav-bar" id="vemNavBar">
+    <div class="vem-nav-inner">
+      <button class="wbtn" onclick="mudarSemana(-1)">&#8249;</button>
+      <div class="week-lbl">
+        <span id="lblSemanaVem">—</span>
+        <span class="week-sub" id="lblSemanaExtraVem"></span>
+      </div>
+      <button class="wbtn" onclick="mudarSemana(1)">&#8250;</button>
+      <button class="btn-hoje" onclick="irParaHoje()">Hoje</button>
+    </div>
+  </div>
+
+  <!-- Filtros Oradores -->
+  <div class="or-filters" id="orFilters">
+    <div class="or-inner">
+      <div class="ptoggle">
+        <button class="fbtn active" onclick="setPeriodo('semana',this)">Esta semana</button>
+        <button class="fbtn" onclick="setPeriodo('mes',this)">Este mês</button>
+        <button class="fbtn" onclick="setPeriodo('todos',this)">Todos</button>
+      </div>
+      <div class="ptoggle">
+        <button class="fbtn active" onclick="setDir('vem',this)">
+          <i class="fa-solid fa-arrow-down me-1" style="font-size:.65rem"></i>Vêm aqui
+        </button>
+        <button class="fbtn" onclick="setDir('vai',this)">
+          <i class="fa-solid fa-arrow-up me-1" style="font-size:.65rem"></i>Vão fora
+        </button>
+        <button class="fbtn" onclick="setDir('todos',this)">Todos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Busca -->
+  <div class="search-wrap" id="searchWrap">
+    <input type="search" id="campoBusca" class="search-input" placeholder="Buscar por dirigente, orador, local…"
+      autocomplete="off" />
+  </div>
+
+  <main>
+    <div class="cards-container" id="conteudo">
+      <div style="text-align:center;padding:48px;color:#94a3b8;">
+        <div class="spinner-border" style="width:2rem;height:2rem;color:var(--cor2);" role="status"></div>
+        <p style="margin-top:12px;font-size:.92rem;">Carregando…</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer" id="rodape"></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // ════════════════════════════════════════
+    // DADOS DO SERVIDOR APPS SCRIPT
+    // ════════════════════════════════════════
+    ///var CFG      = <?!= config ?>;
+    ///var CAMPO    = <?!= campo ?>;
+    ///var ORADORES = <?!= oradores ?>;
+    ///var VEM      = <?!= vem ?>;
+    ///var TPL      = <?!= tpl ?>;
+
+
+
+
+    // ════════════════════════════════════════
+    // ESTADO
+    // ════════════════════════════════════════
+    var abaAtiva = null;
+    var subAba = 'campo';
+    var offsetSem = 0;
+    var orPeriodo = 'semana';
+    var orDirecao = 'vem';
+
+    // ════════════════════════════════════════
+    // DATAS
+    // ════════════════════════════════════════
+    function z(n) { return n < 10 ? '0' + n : String(n); }
+    function hojeStr() {
+      var d = new Date();
+      return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+    }
+    function getSegSem(off) {
+      var d = new Date(), dw = d.getDay(), diff = dw === 0 ? -6 : 1 - dw;
+      d.setDate(d.getDate() + diff + off * 7); d.setHours(0, 0, 0, 0); return d;
+    }
+    function getDomSem(off) { var d = getSegSem(off); d.setDate(d.getDate() + 6); return d; }
+    function strD(d) { return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
+    function filtrarSemana(l) {
+      var i = strD(getSegSem(offsetSem)), f = strD(getDomSem(offsetSem));
+      return (l || []).filter(function (x) { return x.dia >= i && x.dia <= f; });
+    }
+    function filtrarMes(l) {
+      var d = new Date(); d.setDate(d.getDate() + offsetSem * 7);
+      var p = d.getFullYear() + '-' + z(d.getMonth() + 1);
+      return (l || []).filter(function (x) { return x.dia.slice(0, 7) === p; });
+    }
+    function filtrarTodos(l) { return (l || []).filter(function (x) { return x.dia >= hojeStr(); }); }
+    function fmtDiaHdr(str) {
+      var p = str.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]);
+      var ds = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+      return ds[d.getDay()] + ', ' + z(d.getDate()) + '/' + z(d.getMonth() + 1);
+    }
+
+    // ════════════════════════════════════════
+    // LABELS SEMANA
+    // ════════════════════════════════════════
+    function atualizarLabel() {
+      var seg = getSegSem(offsetSem), dom = getDomSem(offsetSem), opts = { day: '2-digit', month: '2-digit' };
+      var txt = 'Sem. ' + seg.toLocaleDateString('pt-BR', opts) + ' – ' + dom.toLocaleDateString('pt-BR', opts);
+      var sub = offsetSem === 0 ? '📅 esta semana' : offsetSem < 0 ? 'semana anterior' : 'próxima semana';
+      ['lblSemana', 'lblSemanaVem'].forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.textContent = txt;
+      });
+      ['lblSemanaExtra', 'lblSemanaExtraVem'].forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.textContent = sub;
+      });
+    }
+
+    // ════════════════════════════════════════
+    // BUILD TABS
+    // ════════════════════════════════════════
+    function buildTabs() {
+      var ul = document.getElementById('mainTabs'); ul.innerHTML = '';
+      var defs = [
+        {
+          id: 'campo', show: CFG.mostrar_campo, ordem: parseInt(CFG.ordem_campo || '1'),
+          label: CFG.label_campo || 'Campo', ico: CFG.icone_campo, cnt: 'cnt-c'
+        },
+        {
+          id: 'oradores', show: CFG.mostrar_oradores, ordem: parseInt(CFG.ordem_oradores || '2'),
+          label: CFG.label_oradores || 'Oradores', ico: CFG.icone_oradores, cnt: 'cnt-o'
+        },
+        {
+          id: 'vem', show: CFG.mostrar_vem, ordem: parseInt(CFG.ordem_vem || '3'),
+          label: CFG.label_vem || 'MWB', ico: CFG.icone_vem, cnt: 'cnt-v'
+        }
+      ];
+      defs.sort(function (a, b) { return a.ordem - b.ordem; });
+      var first = true;
+      defs.forEach(function (a) {
+        if (a.show !== 'sim') return;
+        var li = document.createElement('li'); li.className = 'nav-item';
+        li.innerHTML = '<a class="nav-link' + (first ? ' active' : '') + '" href="#" data-aba="' + a.id + '"' +
+          ' onclick="trocarAba(\'' + a.id + '\',this);return false;">' +
+          '<i class="fa-solid ' + a.ico + ' me-1"></i>' + a.label +
+          '<span class="cnt" id="' + a.cnt + '"></span></a>';
+        ul.appendChild(li);
+        if (first) { abaAtiva = a.id; first = false; }
+      });
+      var btnCampo = document.getElementById('subBtnCampo');
+      var btnTPL = document.getElementById('subBtnTPL');
+      if (btnCampo) btnCampo.style.display = CFG.mostrar_subtab_campo !== 'nao' ? '' : 'none';
+      if (btnTPL) btnTPL.style.display = CFG.mostrar_subtab_tpl !== 'nao' ? '' : 'none';
+    }
+
+    // ════════════════════════════════════════
+    // UTILITÁRIOS HTML
+    // ════════════════════════════════════════
+    function esc(s) {
+      return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+    function iconLocal(l) {
+      l = (l || '').toLowerCase();
+      if (l.includes('zoom') || l.includes('vídeo') || l.includes('video')) return 'fa-video';
+      if (l.includes('salão') || l.includes('salao') || l.includes('reino')) return 'fa-building';
+      if (l.includes('praça') || l.includes('praca')) return 'fa-tree-city';
+      return 'fa-location-dot';
+    }
+    function ajudFiltrado(estudante, ajudante) {
+      if ((estudante || '').toUpperCase().trim() === 'STREAM') return '';
+      return (ajudante || '').trim();
+    }
+
+    // ════════════════════════════════════════
+    // CARD — Campo e Oradores
+    // ════════════════════════════════════════
+    function criarCard(item, isH, isP) {
+      var card = document.createElement('div');
+      card.className = 'card-item' + (isH ? ' card-hoje' : '') + (isP ? ' card-passado' : '');
+      card.setAttribute('data-busca',
+        [item.dirigente || '', item.orador || '', item.local || '',
+        item.congregacao || '', item.titulo || '', item.obs || ''].join(' ').toLowerCase());
+
+      var sc, badge;
+      if (item.tipo === 'campo') {
+        sc = 'azul'; badge = '<span class="badge-tipo bt-campo">Campo</span>';
+      } else if (item.tipo === 'orador' && item.direcao === 'vem') {
+        sc = 'roxo'; badge = '<span class="badge-tipo bt-vem"><i class="fa-solid fa-arrow-down me-1" style="font-size:.62rem"></i>Vem aqui</span>';
+      } else if (item.tipo === 'orador' && item.direcao === 'vai') {
+        sc = 'laranja'; badge = '<span class="badge-tipo bt-vai"><i class="fa-solid fa-arrow-up me-1" style="font-size:.62rem"></i>Vai fora</span>';
+      } else { sc = 'cinza'; badge = ''; }
+
+      var chips = '';
+      if (item.hora) chips += '<span class="chip"><i class="fa-regular fa-clock"></i><span>' + esc(item.hora) + '</span></span>';
+      if (item.dirigente) chips += '<span class="chip"><i class="fa-solid fa-user"></i><span>' + esc(cap(item.dirigente)) + '</span></span>';
+      if (item.orador) chips += '<span class="chip"><i class="fa-solid fa-user-tie"></i><span>' + esc(cap(item.orador)) + '</span></span>';
+      if (item.congregacao) chips += '<span class="chip"><i class="fa-solid fa-location-dot"></i><span>' + esc(cap(item.congregacao)) + '</span></span>';
+      if (item.numDiscurso) chips += '<span class="chip"><i class="fa-solid fa-hashtag"></i><span>' + esc(item.numDiscurso) + '</span></span>';
+      if (item.local) chips += '<span class="chip"><i class="fa-solid ' + iconLocal(item.local) + '"></i><span>' + esc(cap(item.local)) + '</span></span>';
+
+      var extra = '';
+      if (item.titulo) extra += '<div class="chip-titulo"><i class="fa-solid fa-scroll me-1" style="font-size:.66rem;color:#6366f1"></i>' + esc(item.titulo) + '</div>';
+      if (item.obs) extra += '<div class="card-obs">' + esc(item.obs) + '</div>';
+
+      card.innerHTML = '<div class="card-inner"><div class="sbar ' + sc + '"></div>' +
+        '<div class="cbody"><div class="crow">' + badge + (isH ? '<span class="bhoje">Hoje</span>' : '') + '</div>' +
+        '<div class="chips">' + chips + '</div>' + extra + '</div></div>';
+      return card;
+    }
+
+    // ════════════════════════════════════════
+    // CARD MWB — com todos os FIXes aplicados
+    // ════════════════════════════════════════
+    function criarCardVeM(item, isH, isP) {
+      var div = document.createElement('div');
+      div.className = 'vem-card' + (isH ? ' card-hoje' : '') + (isP ? ' card-passado' : '');
+
+      var bt = [item.presidente || '', item.oracao || '', item.oracaoFinal || ''];
+      if (Array.isArray(item.tesouros)) item.tesouros.forEach(function (x) { bt.push(x.parte, x.responsavel); });
+      if (Array.isArray(item.ministerio)) item.ministerio.forEach(function (x) { bt.push(x.parte, x.estudante, x.ajudante); });
+      if (Array.isArray(item.vidaCrista)) item.vidaCrista.forEach(function (x) { bt.push(x.parte, x.responsavel); });
+      if (typeof item.tesouros === 'string') bt.push(item.tesouros);
+      if (typeof item.facaMelhor === 'string') bt.push(item.facaMelhor);
+      if (typeof item.vidaCrista === 'string') bt.push(item.vidaCrista);
+      div.setAttribute('data-busca', bt.join(' ').toLowerCase());
+
+      var html = '';
+
+      // ── Cabeçalho verde ──
+      html += '<div class="vem-header">' +
+        '<div>' +
+        '<div class="vem-date"><i class="fa-regular fa-calendar me-1"></i>' + fmtDiaHdr(item.dia) + '</div>' +
+        (item.hora ? '<div class="vem-hora"><i class="fa-regular fa-clock me-1"></i>' + esc(item.hora) + '</div>' : '') +
+        '</div>' +
+        (isH ? '<span class="bhoje" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.4)">Hoje</span>' : '') +
+        '</div>';
+
+      // ── Bloco Técnico: Vídeo / Câmera / Indicadores ──
+      // FIX: layout em linhas separadas
+      //   Linha 1 — Vídeo (largura total)
+      //   Linha 2 — Câmera (alinhado à direita)
+      //   Linha 3 — Indicadores: Entrada (acima) + Auditório (abaixo)
+      var temTech = (item.video && item.video.length) || item.camera ||
+        (item.indicadores && (item.indicadores.entrada || item.indicadores.auditorio));
+      if (temTech) {
+        html += '<div class="vem-tech">';
+
+        // Linha 1: Vídeo
+        if (item.video && item.video.length)
+          html += '<div class="vem-tech-row">' +
+            '<span class="vem-tech-chip"><i class="fa-solid fa-video"></i>Vídeo: ' + esc(item.video.join(' / ')) + '</span>' +
+            '</div>';
+
+        // Linha 2: Câmera — alinhado à direita
+        if (item.camera)
+          html += '<div class="vem-tech-row camera-row">' +
+            '<span class="vem-tech-chip"><i class="fa-solid fa-camera"></i>Câmera: ' + esc(item.camera) + '</span>' +
+            '</div>';
+
+        // Linha 3: Indicadores — label + Entrada acima / Auditório abaixo
+        if (item.indicadores && (item.indicadores.entrada || item.indicadores.auditorio)) {
+          html += '<div class="vem-tech-row indicadores-row">' +
+            '<span class="vem-tech-label">Indicadores:</span>' +
+            '<div class="vem-indicadores-chips">';
+          if (item.indicadores.entrada)
+            html += '<span class="vem-tech-chip"><i class="fa-solid fa-door-open"></i>Entrada: ' + esc(item.indicadores.entrada) + '</span>';
+          if (item.indicadores.auditorio)
+            html += '<span class="vem-tech-chip"><i class="fa-solid fa-chair"></i>Auditório: ' + esc(item.indicadores.auditorio) + '</span>';
+          html += '</div></div>';
+        }
+
+        html += '</div>';
+      }
+
+      // ── Oração inicial ──
+      if (item.oracao) {
+        html += '<div class="vem-oracao-row">' +
+          '<i class="fa-solid fa-hands-praying" style="color:#b45309;font-size:.8rem"></i>' +
+          '<span class="vem-oracao-label">Oração inicial:</span>' +
+          '<span class="vem-oracao-nome">' + esc(item.oracao) + '</span>' +
+          '</div>';
+      }
+
+      html += '<div class="vem-body">';
+
+      // ── Presidente — FIX: nome na MESMA LINHA que o título ──
+      if (item.presidente) {
+        html += '<div class="vem-section">' +
+          '<div class="vem-sec-title presidente-title">' +
+          '<span><i class="fa-solid fa-user-tie" style="color:#64748b;margin-right:5px"></i>Presidente</span>' +
+          '<span class="pres-nome">' + esc(item.presidente) + '</span>' +
+          '</div>' +
+          '</div>';
+      }
+
+      // ── Tesouros ──
+      html += renderSecaoVeM(item.tesouros,
+        '<i class="fa-solid fa-gem" style="color:#2a6b6e"></i>Tesouros da Palavra de Deus', 'vem-section-tesouros');
+
+      // ── Ministério ──
+      if (Array.isArray(item.ministerio) && item.ministerio.length) {
+        html += '<div class="vem-section vem-section-ministerio"><div class="vem-sec-title">' +
+          '<i class="fa-solid fa-wheat-awn" style="color:#c8960a"></i>Faça Seu Melhor no Ministério</div>' +
+          '<div class="vem-itens">';
+        item.ministerio.forEach(function (x) {
+          var ajud = ajudFiltrado(x.estudante, x.ajudante);
+          html += '<div class="vem-item">';
+          if (x.num) html += '<span class="vem-item-num">' + x.num + '.</span>';
+          html += '<span class="vem-item-parte">' + esc(x.parte) + '</span>';
+          if (x.duracao) html += '<span class="vem-item-dur">' + esc(x.duracao) + '</span>';
+          if (x.estudante) {
+            html += '<span class="vem-item-estud">' + esc(x.estudante) + '</span>';
+            if (ajud) html += '<span class="vem-item-sep">/</span><span class="vem-item-ajud">' + esc(ajud) + '</span>';
+          }
+          html += '</div>';
+        });
+        html += '</div></div>';
+      } else if (typeof item.facaMelhor === 'string' && item.facaMelhor) {
+        html += '<div class="vem-section vem-section-ministerio"><div class="vem-sec-title">' +
+          '<i class="fa-solid fa-wheat-awn" style="color:#c8960a"></i>Faça Seu Melhor</div>' +
+          '<div class="vem-itens"><div class="vem-item"><span class="vem-item-parte">' + esc(item.facaMelhor) + '</span></div></div></div>';
+      }
+
+      // ── Vida Cristã ──
+      html += renderSecaoVeM(item.vidaCrista,
+        '<span style="font-size:.88rem">🐑</span>Nossa Vida Cristã', 'vem-section-crista');
+
+      html += '</div>'; // fecha vem-body
+
+      // ── Oração final ──
+      if (item.oracaoFinal) {
+        html += '<div class="vem-oracao-row" style="border-top:1px solid #fde68a;border-bottom:none;">' +
+          '<i class="fa-solid fa-hands-praying" style="color:#b45309;font-size:.8rem"></i>' +
+          '<span class="vem-oracao-label">Oração final:</span>' +
+          '<span class="vem-oracao-nome">' + esc(item.oracaoFinal) + '</span>' +
+          '</div>';
+      }
+
+      div.innerHTML = html;
+      return div;
+    }
+
+    // ════════════════════════════════════════
+    // RENDER SEÇÃO VeM
+    // FIX: responsável vazio → não mostra "vazio", apenas deixa em branco
+    // ════════════════════════════════════════
+    function renderSecaoVeM(dados, titulo, tipo) {
+      var html = '';
+      if (Array.isArray(dados) && dados.length) {
+        html += '<div class="vem-section ' + (tipo || '') + '"><div class="vem-sec-title">' + titulo + '</div><div class="vem-itens">';
+        dados.forEach(function (x) {
+          html += '<div class="vem-item">';
+          if (x.num) html += '<span class="vem-item-num">' + x.num + '.</span>';
+          html += '<span class="vem-item-parte">' + esc(x.parte) + '</span>';
+          if (x.duracao) html += '<span class="vem-item-dur">' + esc(x.duracao) + '</span>';
+          // FIX: só mostra o nome se preenchido — sem "vazio"
+          if (x.responsavel && x.responsavel.trim())
+            html += '<span class="vem-item-resp">' + esc(x.responsavel) + '</span>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      } else if (typeof dados === 'string' && dados) {
+        html += '<div class="vem-section ' + (tipo || '') + '"><div class="vem-sec-title">' + titulo + '</div>' +
+          '<div class="vem-itens"><div class="vem-item"><span class="vem-item-parte">' + esc(dados) + '</span></div></div></div>';
+      }
+      return html;
+    }
+
+    // ════════════════════════════════════════
+    // RENDER POR ABA
+    // ════════════════════════════════════════
+    function renderLista(lista, isMWB) {
+      var c = document.getElementById('conteudo'); c.innerHTML = '';
+      if (!lista || !lista.length) {
+        c.innerHTML = '<div class="empty-state"><i class="fa-regular fa-calendar-xmark"></i>' +
+          '<p>Nenhuma atividade neste período.</p></div>'; return;
+      }
+      var hoje = hojeStr(), map = {};
+      lista.forEach(function (i) { if (!map[i.dia]) map[i.dia] = []; map[i.dia].push(i); });
+      Object.keys(map).sort().forEach(function (dia) {
+        var isH = dia === hoje, isP = dia < hoje;
+        var sec = document.createElement('div'); sec.className = 'day-section';
+        var gid = 'g' + dia.replace(/-/g, '');
+        var diaHdrHtml = isMWB ? '' :
+          '<div class="day-hdr' + (isH ? ' hoje-hdr' : '') + '">' +
+          (isH ? '📍 ' : '') + fmtDiaHdr(dia) + '</div>';
+        sec.innerHTML = diaHdrHtml +
+          '<div class="' + (isMWB ? '' : 'cards-grid') + '" id="' + gid + '"></div>';
+        c.appendChild(sec);
+        var grid = document.getElementById(gid);
+        map[dia].forEach(function (item) { grid.appendChild(isMWB ? criarCardVeM(item, isH, isP) : criarCard(item, isH, isP)); });
+      });
+    }
+
+    function renderCampo() {
+      var c = document.getElementById('conteudo'); c.innerHTML = '';
+      if (!CAMPO.disponivel) {
+        c.innerHTML = '<div class="aviso-mes"><i class="fa-solid fa-clock-rotate-left me-1"></i>' +
+          'A programação de <strong>' + esc(CAMPO.mes) + '</strong> ainda não foi lançada.</div>'; return;
+      }
+      renderLista(filtrarSemana(CAMPO.itens), false);
+    }
+
+    function renderTPL() {
+      var c = document.getElementById('conteudo'); c.innerHTML = '';
+      if (!TPL || !TPL.disponivel || !TPL.linhas || !TPL.linhas.length) {
+        c.innerHTML = '<div class="empty-state"><i class="fa-solid fa-person-walking"></i>' +
+          '<p>Programação TPL não encontrada.</p>' +
+          '<small>Verifique a aba "' + esc(CFG.aba_tpl || 'TP - Modelo') + '".</small></div>'; return;
+      }
+      var html = '<div class="tpl-wrap"><table class="tpl-table">' +
+        '<thead><tr><th>Dia</th><th>Manhã</th><th>Tarde</th><th>Tardinha/Noite</th></tr></thead><tbody>';
+      TPL.linhas.forEach(function (l) {
+        html += '<tr><td class="tpl-dia">' + esc(l.dia) + '</td>' +
+          '<td><div class="tpl-local">' + esc(l.localManha) + '</div><div class="tpl-nomes">' + esc(l.nomesManha) + '</div></td>' +
+          '<td><div class="tpl-local">' + esc(l.localTarde) + '</div><div class="tpl-nomes">' + esc(l.nomesTarde) + '</div></td>' +
+          '<td><div class="tpl-nomes">' + esc(l.tardinha) + '</div></td></tr>';
+      });
+      c.innerHTML = html + '</tbody></table></div>';
+    }
+
+    function renderOradores() {
+      var lista;
+      if (orPeriodo === 'semana') lista = filtrarSemana(ORADORES);
+      else if (orPeriodo === 'mes') lista = filtrarMes(ORADORES);
+      else lista = filtrarTodos(ORADORES);
+      if (orDirecao !== 'todos') lista = lista.filter(function (i) { return i.direcao === orDirecao; });
+      renderLista(lista, false);
+    }
+
+    function renderVeM() { renderLista(filtrarSemana(VEM), true); }
+
+    // ════════════════════════════════════════
+    // CONTADORES
+    // ════════════════════════════════════════
+    function atualizarContadores() {
+      var cc = filtrarSemana(CAMPO.itens || []).length;
+      var co = filtrarSemana(ORADORES || []).length;
+      var cv = filtrarSemana(VEM || []).length;
+      var ec = document.getElementById('cnt-c'), eo = document.getElementById('cnt-o'), ev = document.getElementById('cnt-v');
+      if (ec) ec.textContent = cc || '';
+      if (eo) eo.textContent = co || '';
+      if (ev) ev.textContent = cv || '';
+    }
+
+    // ════════════════════════════════════════
+    // TROCA DE ABAS
+    // ════════════════════════════════════════
+    function trocarSubAba(aba, el) {
+      subAba = aba;
+      document.querySelectorAll('.sub-btn').forEach(function (b) { b.classList.remove('active'); });
+      if (el) el.classList.add('active');
+      var navSemana = document.getElementById('weekNavCampo');
+      if (navSemana) navSemana.style.display = aba === 'tpl' ? 'none' : 'flex';
+      document.getElementById('searchWrap').style.display = aba === 'tpl' ? 'none' : '';
+      aba === 'tpl' ? renderTPL() : renderCampo();
+    }
+
+    function setPeriodo(p, el) {
+      orPeriodo = p;
+      el.closest('.ptoggle').querySelectorAll('.fbtn').forEach(function (b) { b.classList.remove('active'); });
+      el.classList.add('active'); renderOradores();
+    }
+    function setDir(d, el) {
+      orDirecao = d;
+      el.closest('.ptoggle').querySelectorAll('.fbtn').forEach(function (b) { b.classList.remove('active'); });
+      el.classList.add('active'); renderOradores();
+    }
+    function trocarAba(aba, el) {
+      abaAtiva = aba;
+      document.querySelectorAll('#mainTabs .nav-link').forEach(function (a) { a.classList.remove('active'); });
+      if (el) el.classList.add('active');
+      document.getElementById('belowCampo').style.display = aba === 'campo' ? 'block' : 'none';
+      document.getElementById('vemNavBar').style.display = aba === 'vem' ? 'block' : 'none';
+      document.getElementById('orFilters').style.display = aba === 'oradores' ? 'block' : 'none';
+      document.getElementById('searchWrap').style.display = (subAba === 'tpl' && aba === 'campo') ? 'none' : '';
+      document.getElementById('campoBusca').value = '';
+      if (aba === 'campo') subAba === 'tpl' ? renderTPL() : renderCampo();
+      else if (aba === 'oradores') renderOradores();
+      else if (aba === 'vem') renderVeM();
+    }
+
+    function mudarSemana(d) { offsetSem += d; atualizarLabel(); atualizarContadores(); trocarAba(abaAtiva, null); }
+    function irParaHoje() { offsetSem = 0; atualizarLabel(); atualizarContadores(); trocarAba(abaAtiva, null); }
+
+    // ════════════════════════════════════════
+    // BUSCA
+    // ════════════════════════════════════════
+    document.getElementById('campoBusca').addEventListener('input', function () {
+      var t = this.value.trim().toLowerCase();
+      document.querySelectorAll('.card-item,.vem-card').forEach(function (c) {
+        c.style.display = (!t || (c.getAttribute('data-busca') || '').includes(t)) ? '' : 'none';
+      });
+    });
+
+
+    // ════════════════════════════════════════
+    // --- AJUSTE PARA O GITHUB ---
+    // ════════════════════════════════════════
+    // 1. Você cria a função que vai buscar os dados (O Tanque de Combustível)
+    async function carregarDadosExternos() {
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZKuR1Ui_Sf_QD38BNBs9kILIv34-bUpOjN-OrGnvHNZeLmnmYgFcEjskqLb4tuF1WOg/exec";
+      try {
+        const res = await fetch(SCRIPT_URL + "?api=true");
+        const dados = await res.json();
+
+        // Preenche as gavetas com os dados que chegaram
+        CFG = dados.config;
+        CAMPO = dados.campo;
+        ORADORES = dados.oradores;
+        VEM = dados.vem;
+        TPL = dados.tpl;
+
+        // 2. AGORA SIM, chamamos o motor para ligar
+        iniciarApp();
+
+      } catch (e) {
+        document.getElementById('conteudo').innerHTML = "Erro ao carregar dados.";
+      }
+    }
+
+    // 3. AQUI ESTÁ O SEU CÓDIGO ORIGINAL (Apenas demos um nome a ele)
+    function iniciarApp() {
+      if (CFG.cor_primaria) document.documentElement.style.setProperty('--cor1', CFG.cor_primaria);
+      if (CFG.cor_secundaria) document.documentElement.style.setProperty('--cor2', CFG.cor_secundaria);
+      document.getElementById('nomeCongreq').textContent = CFG.nome_congregacao || 'Programação';
+      document.getElementById('appSub').textContent = CFG.subtitulo || 'Programação Semanal';
+      document.getElementById('rodape').textContent = CFG.nome_congregacao || '';
+      buildTabs();
+      atualizarLabel();
+      atualizarContadores();
+      if (abaAtiva) trocarAba(abaAtiva, document.querySelector('#mainTabs .nav-link'));
+    }
+
+    // 4. Dizemos ao navegador: "Assim que abrir a página, comece a buscar os dados"
+    window.onload = carregarDadosExternos;
+
+  </script>
+</body>
+
+</html>
