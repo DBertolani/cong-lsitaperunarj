@@ -925,24 +925,24 @@
 ════════════════════════════════════════ */
     @media (max-width: 600px) {
 
-      /* FIX: setas menores para não cortar no celular */
+      /* FIX: setas maiores para melhor usabilidade no celular */
       .wbtn {
-        padding: 5px 9px;
-        font-size: 1rem;
+        padding: 8px 14px;
+        font-size: 1.15rem;
       }
 
       .btn-hoje {
-        font-size: .68rem;
-        padding: 5px 7px;
+        font-size: .75rem;
+        padding: 7px 10px;
       }
 
       .week-lbl {
-        font-size: .72rem;
+        font-size: .8rem;
       }
 
       .sub-btn {
-        padding: 5px 8px;
-        font-size: .78rem;
+        padding: 7px 10px;
+        font-size: .82rem;
       }
     }
 
@@ -1507,7 +1507,7 @@
       document.getElementById('belowCampo').style.display = aba === 'campo' ? 'block' : 'none';
       document.getElementById('vemNavBar').style.display = aba === 'vem' ? 'block' : 'none';
       document.getElementById('orFilters').style.display = aba === 'oradores' ? 'block' : 'none';
-      document.getElementById('searchWrap').style.display = (subAba === 'tpl' && aba === 'campo') ? 'none' : '';
+      document.getElementById('searchWrap').style.display = aba === 'oradores' ? '' : 'none';
       document.getElementById('campoBusca').value = '';
       if (aba === 'campo') subAba === 'tpl' ? renderTPL() : renderCampo();
       else if (aba === 'oradores') renderOradores();
