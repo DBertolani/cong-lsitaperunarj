@@ -13,9 +13,9 @@
   <meta property="og:description" content="Acesse a programação semanal atualizada da congregação.">
   <meta property="og:type" content="website">
 
-  <meta property="og:url" content="https://lsitaperunarj.deab.com.br/">
+  <meta property="og:url" content="https://dbertolani.github.io/cong-lsitaperunarj/">
 
-  <meta id="metaOgImage" property="og:image" content="https://lsitaperunarj.deab.com.br/logo.png">
+  <meta id="metaOgImage" property="og:image" content="https://dbertolani.github.io/cong-lsitaperunarj/logo.png">
 
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -1535,35 +1535,60 @@
     var CFG, CAMPO, ORADORES, VEM, TPL;
     var abaAtiva = null, subAba = 'campo', offsetSem = 0, orPeriodo = 'semana', orDirecao = 'vem';
 
-    // 2. Função que busca os dados no Google
+// 2. Função que busca os dados no Google (COM CACHE NO CELULAR)
     async function carregarDadosExternos() {
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZKuR1Ui_Sf_QD38BNBs9kILIv34-bUpOjN-OrGnvHNZeLmnmYgFcEjskqLb4tuF1WOg/exec";
 
+      // 1º PASSO: Tenta puxar a versão "antiga" salva na memória do celular do irmão
+      const dadosSalvos = localStorage.getItem('dadosCongregacao');
+      if (dadosSalvos) {
+        console.log("App abriu em 0.1s! Carregou da memória.");
+        try {
+          const dadosMemoria = JSON.parse(dadosSalvos);
+          CFG = dadosMemoria.config;
+          CAMPO = dadosMemoria.campo;
+          ORADORES = dadosMemoria.oradores;
+          VEM = dadosMemoria.vem;
+          TPL = dadosMemoria.tpl;
+
+          document.title = CFG.nome_congregacao || 'Programação';
+          const elNome = document.getElementById('nomeCongreq');
+          if (elNome) elNome.textContent = CFG.nome_congregacao;
+
+          iniciarApp(); // Desenha a tela instantaneamente
+        } catch(e) {
+          console.error("Erro ao ler memória do celular", e);
+        }
+      }
+
+      // 2º PASSO: (Silencioso) Vai lá no Google ver se tem novidade...
       try {
         const res = await fetch(SCRIPT_URL + "?api=true");
-        const dados = await res.json();
+        const dadosNovos = await res.json();
 
-        // Preenche as variáveis com os dados da planilha
-        CFG = dados.config;
-        CAMPO = dados.campo;
-        ORADORES = dados.oradores;
-        VEM = dados.vem;
-        TPL = dados.tpl;
+        // 3º PASSO: Atualiza a memória e atualiza a tela
+        localStorage.setItem('dadosCongregacao', JSON.stringify(dadosNovos));
+        
+        CFG = dadosNovos.config;
+        CAMPO = dadosNovos.campo;
+        ORADORES = dadosNovos.oradores;
+        VEM = dadosNovos.vem;
+        TPL = dadosNovos.tpl;
 
-        // --- AGORA A MÁGICA DINÂMICA ---
-        // Atualiza o título da aba do navegador
         document.title = CFG.nome_congregacao || 'Programação';
-
-        // Atualiza o nome que aparece no cabeçalho do App
         const elNome = document.getElementById('nomeCongreq');
         if (elNome) elNome.textContent = CFG.nome_congregacao;
 
-        // Liga o motor do App
-        iniciarApp();
+        // Limpa a tela e desenha de novo (agora com os dados atualizados)
+        iniciarApp(); 
+        console.log("Novidades do Google aplicadas na tela.");
 
       } catch (e) {
-        console.error("Erro ao carregar:", e);
-        document.getElementById('conteudo').innerHTML = "<div class='p-5 text-center'>Erro ao carregar dados. Verifique a conexão.</div>";
+        console.error("Erro ao buscar no Google:", e);
+        // Se der erro (ex: irmão está sem internet), ele já está vendo os dados da memória, então não mostramos erro feio na tela.
+        if (!dadosSalvos) {
+          document.getElementById('conteudo').innerHTML = "<div class='p-5 text-center'>Você está sem internet para baixar a programação.</div>";
+        }
       }
     }
 
