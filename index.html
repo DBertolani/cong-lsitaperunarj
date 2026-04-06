@@ -1608,8 +1608,18 @@
       if (abaAtiva) trocarAba(abaAtiva, document.querySelector('#mainTabs .nav-link'));
     }
 
-    // 4. Manda o navegador começar a busca assim que abrir
+
+// 4. Manda o navegador começar a busca assim que abrir
     window.onload = carregarDadosExternos;
+
+    // 5. TRUQUE DE APP NATIVO: Busca novidades toda vez que o irmão voltar para o app 
+    // (ex: foi ver uma mensagem no WhatsApp e voltou pro site, ou desbloqueou a tela)
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible") {
+        console.log("Irmão voltou para o App! Checando se há novidades no Google...");
+        carregarDadosExternos();
+      }
+    });
 
   </script>
 </body>
